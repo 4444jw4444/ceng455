@@ -113,6 +113,7 @@
   <FILES>
     <GeneratedCs>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\Cpu.c</PathName>
+      <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\HandlerTask.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\MainTask.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\SerialTask.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\clockMan1.c</PathName>
@@ -253,6 +254,7 @@
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\SDK\rtos\mqx\mqx_stdlib\source\stdio\stdio.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\SDK\rtos\mqx\mqx_stdlib\source\strings\strings.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\Events.c</PathName>
+      <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\handler.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\main.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\os_tasks.c</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\rtos_main_task.c</PathName>
@@ -260,6 +262,7 @@
     </GeneratedCs>
     <GeneratedHs>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\Cpu.h</PathName>
+      <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\HandlerTask.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\MainTask.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\PE_low_level_init.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Generated_Code\SDK\platform\devices\MK64F12\startup\system_MK64F12.h</PathName>
@@ -402,6 +405,7 @@
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\SDK\rtos\mqx\mqx_stdlib\source\stdio\print_prv.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\SDK\rtos\mqx\mqx_stdlib\source\stdio\scan_prv.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\Events.h</PathName>
+      <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\handler.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\os_tasks.h</PathName>
       <PathName>C:\Users\jorinw\Documents\lab2\lab2\Sources\rtos_main_task.h</PathName>
     </GeneratedHs>

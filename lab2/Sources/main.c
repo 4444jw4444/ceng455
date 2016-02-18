@@ -42,16 +42,15 @@
 #include "MainTask.h"
 #include "SerialTask.h"
 #include "myUART.h"
+#include "HandlerTask.h"
 #if CPU_INIT_CONFIG
   #include "Init_Config.h"
 #endif
-/* User includes (#include below this line is not maintained by Processor Expert) */
 
 /*lint -save  -e970 Disable MISRA rule (6.3) checking. */
 int main(void)
 /*lint -restore Enable MISRA rule (6.3) checking. */
 {
-  /* Write your local variable definition here */
 
   /*** Processor Expert internal initialization. DON'T REMOVE THIS CODE!!! ***/
   PE_low_level_init();

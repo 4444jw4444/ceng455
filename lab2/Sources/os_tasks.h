@@ -41,10 +41,30 @@
 #include "MainTask.h"
 #include "SerialTask.h"
 #include "myUART.h"
-
+#include "HandlerTask.h"
+#include <message.h>
 #ifdef __cplusplus
 extern "C" {
 #endif 
+
+//Global Queues
+#define HANDLER_INPUT_QUEUE 1
+//#define HANDLER_OUTPUT_QUEUE 2
+
+//Message Pool Definitions
+/* This structure contains a data field and a message header structure */
+typedef struct interrupt_message
+{
+   MESSAGE_HEADER_STRUCT   HEADER;
+   unsigned char           CHARACTER;
+} INTERRUPT_MESSAGE, * INTERRUPT_MESSAGE_PTR;
+
+//Message Pool
+extern _pool_id interrupt_message_pool;
+
+//Initial number of messages in the pool
+#define INITIAL_POOL_SIZE 5
+
 
 /*
 ** ===================================================================
@@ -57,6 +77,17 @@ extern "C" {
 */
 void serial_task(os_task_param_t task_init_data);
 
+
+/*
+** ===================================================================
+**     Callback    : RunHandler
+**     Description : Task function entry.
+**     Parameters  :
+**       task_init_data - OS task parameter
+**     Returns : Nothing
+** ===================================================================
+*/
+void RunHandler(os_task_param_t task_init_data);
 
 /* END os_tasks */
 
