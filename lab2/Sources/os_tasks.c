@@ -3,7 +3,14 @@
 #include "Events.h"
 #include "rtos_main_task.h"
 #include "os_tasks.h"
+#include "handler.c"
 
+#define KEY_BS 0x08
+#define KEY_CR 0x0D
+#define KEY_LF 0x0A
+#define KEY_CTRL_U 0x15
+#define KEY_CTRL_W 0x17
+#define KEY_SPACE 0x20
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,9 +66,65 @@ _pool_id interrupt_message_pool;
 unsigned char stringBuffer[MAX_BUFFER_SIZE];
 int bufferIndex;
 
+void character(unsigned char inputChar){
+	if(bufferIndex < MAX_BUFFER_SIZE-1){
+		addCharacter(inputChar);
+		unsigned char holder[2];
+		holder[0] = inputChar;
+		holder[1] = '\0';
+		UART_DRV_SendData(myUART_IDX, holder, sizeof(holder));
+		printf("String so far: %s\n", stringBuffer);
+	}else{
+		printf("Warning: Buffer Full!");
+	}
+}
+
+void addCharacter(unsigned char inputChar){
+	stringBuffer[bufferIndex] = inputChar;
+	bufferIndex ++;
+	return;
+}
+
+void backspace(){
+	bufferIndex--;
+	stringBuffer[bufferIndex] = ' ';
+	unsigned char bs = '0x08';
+	UART_DRV_SendData(myUART_IDX, bs, sizeof(bs));
+	//UART_DRV_SendData(myUART_IDX, stringBuffer, sizeof(stringBuffer));
+	return;
+}
+
+void bell(){
+	return;
+}
+
+void hTab(){
+	return;
+}
+
+void linefeed(){
+	return;
+}
+
+void carriageReturn(){
+	return;
+}
+
+void ctrlU(){
+	return;
+}
+
+void ctrlW(){
+	return;
+}
+
+void esc(){
+	return;
+}
 
 void RunHandler(os_task_param_t task_init_data)
 {
+	bufferIndex = 0;
 	printf("Handler task started.\r\n");
 
 	_queue_id          input_qid;
@@ -94,28 +157,24 @@ void RunHandler(os_task_param_t task_init_data)
 		}
 		unsigned char inputChar = msg_ptr->CHARACTER;
 
-		if(inputChar == 0x08){//backspace
-
+		if(inputChar == 0x08 && bufferIndex != 0){//backspace
+			backspace();
 		}else if(inputChar == 0x07){//Bell
-
+			bell();
 		}else if(inputChar == 0x09){//HTab
-
+			hTab();
 		}else if(inputChar == 0x0A){//LineFeed
-
+			linefeed();
 		}else if(inputChar == 0x0D){//Carriage Return
-
+			carriageReturn();
 		}else if(inputChar == 0x15){//CTRL U
-
+			ctrlU();
 		}else if(inputChar == 0x17){//CTRL W
-
+			ctrlW();
 		}else if(inputChar == 0x1B){//Esc
-
-		}else{
-			unsigned char holder[2];
-			holder[0] = inputChar; //data
-			holder[1] = '\0';//null
-
-			UART_DRV_SendData(myUART_IDX, holder, sizeof(holder));
+			esc();
+		}else{//regular character
+			character(inputChar);
 		}
 
 
