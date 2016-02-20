@@ -56,29 +56,30 @@ _pool_id interrupt_message_pool;
 void myUART_RxCallback(uint32_t instance, void * uartState)
 {
   /* Write your code here ... */
-	//UART_DRV_SendData(myUART_IDX, myRxBuff, sizeof(myRxBuff));
+	UART_DRV_SendData(myUART_IDX, myRxBuff, sizeof(myRxBuff));
+	printf("hello world \n");
 	//allocating a message
 
-	printf("RxCallback received char: %c \r\n", myRxBuff[0]);
-
-	/*allocate a message*/
-	INTERRUPT_MESSAGE_PTR msg_ptr = (INTERRUPT_MESSAGE_PTR)_msg_alloc(interrupt_message_pool);
-
-	if (msg_ptr == NULL) {
-	 printf("\nCould not allocate a message\r\n");
-	 _task_block();
-	}
-
-	msg_ptr->HEADER.TARGET_QID = _msgq_get_id(0, HANDLER_INPUT_QUEUE);
-	msg_ptr->HEADER.SIZE = sizeof(INTERRUPT_MESSAGE);
-	msg_ptr->CHARACTER = myRxBuff[0];
-
-	bool result = _msgq_send(msg_ptr);
-
-	if (result != TRUE) {
-	 printf("\nCould not send a message \r\n");
-	 _task_block();
-	}
+//	printf("RxCallback received char: %c \r\n", myRxBuff[0]);
+//
+//	/*allocate a message*/
+//	INTERRUPT_MESSAGE_PTR msg_ptr = (INTERRUPT_MESSAGE_PTR)_msg_alloc(interrupt_message_pool);
+//
+//	if (msg_ptr == NULL) {
+//	 printf("\nCould not allocate a message\r\n");
+//	 _task_block();
+//	}
+//
+//	msg_ptr->HEADER.TARGET_QID = _msgq_get_id(0, HANDLER_INPUT_QUEUE);
+//	msg_ptr->HEADER.SIZE = sizeof(INTERRUPT_MESSAGE);
+//	msg_ptr->CHARACTER = myRxBuff[0];
+//
+//	bool result = _msgq_send(msg_ptr);
+//
+//	if (result != TRUE) {
+//	 printf("\nCould not send a message \r\n");
+//	 _task_block();
+//	}
 	return;
 }
 

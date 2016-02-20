@@ -2,7 +2,7 @@
 <GenerationInfo_G_C>
   <Options>
     <ProjectName>lab2</ProjectName>
-    <ProjectDirectory>C:\Users\jorinw\Documents\lab2\lab2\</ProjectDirectory>
+    <ProjectDirectory>C:\Users\jorinw\Documents\ceng455\lab2\</ProjectDirectory>
     <ProjectMainModuleName>main</ProjectMainModuleName>
     <DestEventsDirectory>Sources\</DestEventsDirectory>
     <DestDriversSubDirectory>..\Generated_Code\</DestDriversSubDirectory>
