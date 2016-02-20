@@ -4,9 +4,11 @@
 #include "rtos_main_task.h"
 #include "os_tasks.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif 
+
 _pool_id interrupt_message_pool;
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
@@ -53,6 +55,11 @@ void serial_task(os_task_param_t task_init_data)
 
 _pool_id interrupt_message_pool;
 
+#define MAX_BUFFER_SIZE 128
+unsigned char stringBuffer[MAX_BUFFER_SIZE];
+int bufferIndex;
+
+
 void RunHandler(os_task_param_t task_init_data)
 {
 	printf("Handler task started.\r\n");
@@ -85,11 +92,34 @@ void RunHandler(os_task_param_t task_init_data)
 		   printf("\nCould not receive a message\n");
 		   _task_block();
 		}
-		unsigned char holder[2];
-		holder[0] = msg_ptr->CHARACTER; //data
-	    holder[1] = '\0';//null
-		UART_DRV_SendData(myUART_IDX, holder, sizeof(holder));
-		//printf(" %c \n", msg_ptr->CHARACTER);
+		unsigned char inputChar = msg_ptr->CHARACTER;
+
+		if(inputChar == 0x08){//backspace
+
+		}else if(inputChar == 0x07){//Bell
+
+		}else if(inputChar == 0x09){//HTab
+
+		}else if(inputChar == 0x0A){//LineFeed
+
+		}else if(inputChar == 0x0D){//Carriage Return
+
+		}else if(inputChar == 0x15){//CTRL U
+
+		}else if(inputChar == 0x17){//CTRL W
+
+		}else if(inputChar == 0x1B){//Esc
+
+		}else{
+			unsigned char holder[2];
+			holder[0] = inputChar; //data
+			holder[1] = '\0';//null
+
+			UART_DRV_SendData(myUART_IDX, holder, sizeof(holder));
+		}
+
+
+
 
 
 #ifdef PEX_USE_RTOS   
