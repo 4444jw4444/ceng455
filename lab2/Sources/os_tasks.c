@@ -7,7 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif 
-
+_pool_id interrupt_message_pool;
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
 
@@ -85,8 +85,10 @@ void RunHandler(os_task_param_t task_init_data)
 		   printf("\nCould not receive a message\n");
 		   _task_block();
 		}
-
-		UART_DRV_SendData(myUART_IDX, msg_ptr->CHARACTER, sizeof(msg_ptr->CHARACTER));
+		unsigned char holder[2];
+		holder[0] = msg_ptr->CHARACTER; //data
+	    holder[1] = '\0';//null
+		UART_DRV_SendData(myUART_IDX, holder, sizeof(holder));
 		//printf(" %c \n", msg_ptr->CHARACTER);
 
 
