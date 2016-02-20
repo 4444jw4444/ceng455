@@ -33,7 +33,7 @@ typedef struct HandlerReader{
 typedef struct HandlerReaderList{
 	int count;
 	int maxSize;
-	HandlerReaderPtr readers;
+	HandlerReaderPtr* readers;
 } HandlerReaderList;
 
 typedef struct Handler{
@@ -41,7 +41,6 @@ typedef struct Handler{
 	HandlerBuffer buffer;
 	_task_id currentWriter;
 	MUTEX_STRUCT accessMutex;
-	MUTEX_STRUCT readerMutex;
 	_queue_id charInputQueue;
 	_queue_id bufferOutputQueue;
 } Handler, * HandlerPtr;
@@ -49,7 +48,7 @@ typedef struct Handler{
 typedef struct SerialMessage{
 	MESSAGE_HEADER_STRUCT HEADER;
 	int length;
-	char* message;
+	char* content;
 } SerialMessage, * SerialMessagePtr;
 
 /*=============================================================
