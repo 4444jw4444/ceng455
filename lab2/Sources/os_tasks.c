@@ -85,12 +85,15 @@ void addCharacter(unsigned char inputChar){
 	return;
 }
 
-void backspace(){
+void backspace(unsigned char inputChar){
 	bufferIndex--;
 	stringBuffer[bufferIndex] = ' ';
-	unsigned char bs = '0x08';
-	UART_DRV_SendData(myUART_IDX, bs, sizeof(bs));
-	//UART_DRV_SendData(myUART_IDX, stringBuffer, sizeof(stringBuffer));
+	unsigned char holder[2];
+	holder[0] = inputChar;
+	holder[1] = '\0';
+	UART_DRV_SendData(myUART_IDX, holder, sizeof(char) * 2);
+	UART_DRV_SendData(myUART_IDX, &stringBuffer[bufferIndex], sizeof(unsigned char));
+	printf("String so far: %s\n", stringBuffer);
 	return;
 }
 
@@ -157,8 +160,8 @@ void RunHandler(os_task_param_t task_init_data)
 		}
 		unsigned char inputChar = msg_ptr->CHARACTER;
 
-		if(inputChar == 0x08 && bufferIndex != 0){//backspace
-			backspace();
+		if(inputChar == 0x08 && bufferIndex > 0){//backspace
+			backspace(inputChar);
 		}else if(inputChar == 0x07){//Bell
 			bell();
 		}else if(inputChar == 0x09){//HTab
