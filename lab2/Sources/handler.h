@@ -11,6 +11,9 @@
                          CONSTANTS
  ==============================================================*/
 
+#define HANDLER_BUFFER_SIZE 1024
+#define HANDLER_READER_MAX 256
+
 #define SERIAL_MESSAGE_POOL_INITIAL_SIZE 16
 #define SERIAL_MESSAGE_POOL_GROWTH_RATE 16
 #define SERIAL_MESSAGE_POOL_MAX_SIZE 2048
@@ -34,15 +37,14 @@ typedef struct HandlerReaderList{
 	int count;
 	int maxSize;
 	HandlerReaderPtr* readers;
-} HandlerReaderList;
+} HandlerReaderList, * HandlerReaderListPtr;
 
 typedef struct Handler{
 	HandlerReaderList readerList;
 	HandlerBuffer buffer;
 	_task_id currentWriter;
-	MUTEX_STRUCT accessMutex;
 	_queue_id charInputQueue;
-	_queue_id bufferOutputQueue;
+	_queue_id bufferInputQueue;
 } Handler, * HandlerPtr;
 
 typedef struct SerialMessage{
@@ -56,6 +58,7 @@ typedef struct SerialMessage{
  ==============================================================*/
 
 extern HandlerPtr g_Handler;
+extern MUTEX_STRUCT g_HandlerMutex;
 extern _pool_id g_SerialMessagePool;
 
 /*=============================================================
@@ -67,5 +70,12 @@ bool GetLine(char* outputString);
 _queue_id OpenW(void);
 bool PutLine(_queue_id queueId, char* inputString);
 bool Close(void);
+
+/*=============================================================
+                      INTERNAL INTERFACE
+ ==============================================================*/
+
+void _initializeHandler(HandlerPtr handler, _queue_id charInputQueue, _queue_id bufferInputQueue);
+void _initializeHandlerMutex(HandlerPtr handler);
 
 #endif

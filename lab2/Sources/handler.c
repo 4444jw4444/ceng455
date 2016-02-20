@@ -1,6 +1,57 @@
 #include "handler.h"
 
 /*=============================================================
+                      INITIALIZATION
+ ==============================================================*/
+
+void _initializeHandlerBuffer(HandlerBufferPtr handlerBuffer){
+	char* charBuffer;
+	if(!(charBuffer = (char*) malloc(sizeof(char) * HANDLER_BUFFER_SIZE))){
+		printf("Unable to allocate memory for character buffer.");
+		_task_block();
+	}
+	memset(charBuffer, 0, sizeof(char) * HANDLER_BUFFER_SIZE);
+
+	handlerBuffer->currentSize = 0;
+	handlerBuffer->maxSize = HANDLER_BUFFER_SIZE;
+	handlerBuffer->buffer = charBuffer;
+}
+
+void _initializeHandlerReaderList(HandlerReaderListPtr readerList){
+	HandlerReaderPtr* readers;
+	if(!(readers = (HandlerReaderPtr*) malloc(sizeof(HandlerReaderPtr) * HANDLER_READER_MAX))){
+		printf("Unable to allocate memory for reader list.");
+		_task_block();
+	}
+	memset(readerList, 0, sizeof(HandlerReaderPtr) * HANDLER_READER_MAX);
+
+	readerList->count = 0;
+	readerList->maxSize = HANDLER_READER_MAX;
+	readerList->readers = readers;
+}
+
+void _initializeHandler(HandlerPtr handler, _queue_id charInputQueue, _queue_id bufferInputQueue){
+	_initializeHandlerBuffer(&handler->buffer);
+	_initializeHandlerReaderList(&handler->readerList);
+	handler->currentWriter = 0;
+	handler->charInputQueue = charInputQueue;
+	handler->bufferInputQueue = bufferInputQueue;
+}
+
+void _initializeHandlerMutex(HandlerPtr handler){
+	MUTEX_ATTR_STRUCT handlerMutexAttributes;
+	if(_mutatr_init(&handlerMutexAttributes) != MQX_OK){
+		printf("Mutex attribute initialization failed.\n");
+		_task_block();
+	}
+
+	if(_mutex_init(&g_HandlerMutex, &handlerMutexAttributes) != MQX_OK){
+		printf("Mutex initialization failed.\n");
+		_task_block();
+	}
+}
+
+/*=============================================================
                       BUFFER MANAGEMENT
  ==============================================================*/
 
@@ -80,7 +131,7 @@ void _clearHandlerWriter(_task_id taskId, HandlerPtr handler){
  ==============================================================*/
 
 bool OpenR(uint16_t streamNumber){
-	if(_mutex_lock(&g_Handler->accessMutex) != MQX_OK){
+	if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
 		printf("Mutex lock failed.\n");
 		_task_block();
 	}
@@ -89,14 +140,14 @@ bool OpenR(uint16_t streamNumber){
 
 	// Ensure this task does not already have read privileges
 	if (_getReaderQueueNum(thisTask, g_Handler) != MSGQ_NULL_QUEUE_ID){
-		_mutex_unlock(&g_Handler->accessMutex);
+		_mutex_unlock(&g_HandlerMutex);
 		return false;
 	}
 
 	// Register this task for reading with the handler
 	bool result = _addHandlerReader(thisTask, streamNumber, g_Handler);
 
-	_mutex_unlock(&g_Handler->accessMutex);
+	_mutex_unlock(&g_HandlerMutex);
 	return result;
 }
 
@@ -106,12 +157,12 @@ bool GetLine(char* outputString){
 	}
 
 	// Get the reader queue for this task
-	if(_mutex_lock(&g_Handler->accessMutex) != MQX_OK){
+	if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
 		printf("Mutex lock failed.\n");
 		_task_block();
 	}
 	_queue_id readerQueue = _getReaderQueueNum(_task_get_id(), g_Handler);
-	_mutex_unlock(&g_Handler->accessMutex);
+	_mutex_unlock(&g_HandlerMutex);
 
 	// Ensure this task has read privileges
 	if(readerQueue == MSGQ_NULL_QUEUE_ID){
@@ -135,7 +186,7 @@ bool GetLine(char* outputString){
 }
 
 _queue_id OpenW(void){
-	if(_mutex_lock(&g_Handler->accessMutex) != MQX_OK){
+	if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
 		printf("Mutex lock failed.\n");
 		_task_block();
 	}
@@ -143,15 +194,15 @@ _queue_id OpenW(void){
 	_task_id writer = g_Handler->currentWriter;
 
 	if (writer != 0){
-		_mutex_unlock(&g_Handler->accessMutex);
+		_mutex_unlock(&g_HandlerMutex);
 		return 0;
 	}
 
 	g_Handler->currentWriter = _task_get_id();
-	_queue_id outputQueue = g_Handler->bufferOutputQueue;
+	_queue_id inputQueue = g_Handler->bufferInputQueue;
 
-	_mutex_unlock(&g_Handler->accessMutex);
-	return outputQueue;
+	_mutex_unlock(&g_HandlerMutex);
+	return inputQueue;
 }
 
 bool PutLine(_queue_id queueId, char* inputString){
@@ -184,7 +235,7 @@ bool PutLine(_queue_id queueId, char* inputString){
 }
 
 bool Close(void){
-	if(_mutex_lock(&g_Handler->accessMutex) != MQX_OK){
+	if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
 		printf("Mutex lock failed.\n");
 		_task_block();
 	}
@@ -193,7 +244,8 @@ bool Close(void){
 	_clearHandlerReader(thisTask, g_Handler);
 	_clearHandlerWriter(thisTask, g_Handler);
 
-	_mutex_unlock(&g_Handler->accessMutex);
+	_mutex_unlock(&g_HandlerMutex);
 	return true;
 }
+
 
