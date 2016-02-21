@@ -11,6 +11,8 @@
                          CONSTANTS
  ==============================================================*/
 
+#define PRINT_DELAY_MS 10
+
 #define HANDLER_INTERRUPT_QUEUE_ID 8
 #define HANDLER_INPUT_QUEUE_ID 9
 

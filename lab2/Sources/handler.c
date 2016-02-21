@@ -158,12 +158,17 @@ void _clearHandlerWriter(_task_id taskId, HandlerPtr handler){
                       BUFFER MANAGEMENT
  ==============================================================*/
 
+static const char BackspaceString[] = "\b \b";
+static const int BackspaceStringLen = 3;
+
 void _printCharacterToTerminal(char character, uint32_t terminalId){
 	UART_DRV_SendData(terminalId, &character, sizeof(char));
+	OSA_TimeDelay(PRINT_DELAY_MS);
 }
 
 void _printStringToTerminal(char* string, int size, uint32_t terminalId){
 	UART_DRV_SendData(terminalId, string, sizeof(char) * size);
+	OSA_TimeDelay(PRINT_DELAY_MS);
 }
 
 bool _addCharacterToEndOfBuffer(char character, HandlerBufferPtr buffer){
@@ -188,6 +193,13 @@ char _removeCharacterFromEndOfBuffer(HandlerBufferPtr buffer){
 	return removedChar;
 }
 
+char _getLastCharacterInBuffer(HandlerBufferPtr buffer){
+	if(buffer->currentSize == 0){
+		return '\0';
+	}
+	return buffer->characters[buffer->currentSize - 1];
+}
+
 void _clearBuffer(HandlerBufferPtr buffer){
 	memset(buffer->characters, 0, sizeof(char) * buffer->maxSize + 1);
 	buffer->currentSize = 0;
@@ -207,21 +219,40 @@ void _handleCarriageReturn(HandlerPtr handler){
 
 void _handleBackspace(HandlerPtr handler){
 	_removeCharacterFromEndOfBuffer(&handler->buffer);
-	_printStringToTerminal("\b \b", 3, handler->terminalInstance);
+	_printStringToTerminal(BackspaceString, BackspaceStringLen, handler->terminalInstance);
 }
 
 void _handleEraseLine(HandlerPtr handler){
-	for(int i=0; i<handler->buffer.currentSize; i++){
-		_printStringToTerminal("\b \b", 3, handler->terminalInstance);
+
+	// Create character string to delete terminal line in one step
+	int whitespaceStringLen = handler->buffer.currentSize * BackspaceStringLen;
+	char whitespaceString[whitespaceStringLen];
+	for(int i=0; i<whitespaceStringLen; i+=BackspaceStringLen){
+		for(int j=0; j<BackspaceStringLen; j++){
+			whitespaceString[i+j] = BackspaceString[j];
+		}
 	}
+	_printStringToTerminal(whitespaceString, whitespaceStringLen, handler->terminalInstance);
 	_clearBuffer(&handler->buffer);
 }
 
 void _handleEraseWord(HandlerPtr handler){
-	char removedChar = _removeCharacterFromEndOfBuffer(&handler->buffer);
-	while(removedChar != ' ' && removedChar != '\0'){
+	HandlerBufferPtr buffer = &handler->buffer;
+
+	char lastChar = _getLastCharacterInBuffer(buffer);
+
+	// Clear any leading whitespace
+	while(lastChar == ' '){
 		_printStringToTerminal("\b \b",  3, handler->terminalInstance);
-		removedChar = _removeCharacterFromEndOfBuffer(&handler->buffer);
+		_removeCharacterFromEndOfBuffer(buffer);
+		lastChar = _getLastCharacterInBuffer(buffer);
+	}
+
+	// Clear non-space characters until a space character is encountered or the end of the buffer is reached
+	while(lastChar != ' ' && lastChar != '\0'){
+		_printStringToTerminal("\b \b",  3, handler->terminalInstance);
+		_removeCharacterFromEndOfBuffer(buffer);
+		lastChar = _getLastCharacterInBuffer(buffer);
 	}
 }
 
