@@ -123,9 +123,7 @@ void RunHandler(os_task_param_t task_init_data)
 		   printf("Handler failed to receive an interrupt message.\n");
 		   _task_block();
 		}
-		unsigned char inputChar = interruptMessage->character;
-		_handleCharacterInput(inputChar, g_Handler);
-		_msg_free(interruptMessage);
+		_handleInterruptMessage(interruptMessage, g_Handler);
 
 #ifdef PEX_USE_RTOS   
   }

@@ -3,6 +3,7 @@
 #include <mqx.h>
 #include <message.h>
 #include <mutex.h>
+#include <ctype.h>
 
 #ifndef SOURCES_HANDLER_H_
 #define SOURCES_HANDLER_H_
@@ -10,6 +11,8 @@
 /*=============================================================
                          CONSTANTS
  ==============================================================*/
+
+#define PRINT_DELAY_MS 10
 
 #define HANDLER_INTERRUPT_QUEUE_ID 8
 #define HANDLER_INPUT_QUEUE_ID 9
@@ -94,6 +97,7 @@ bool Close(void);
 void _initializeHandler(HandlerPtr handler, _queue_id charInputQueue, _queue_id bufferInputQueue, uint32_t terminalInstance);
 void _initializeHandlerMutex(MUTEX_STRUCT* mutex);
 void _handleCharacterInput(char character, HandlerPtr handler);
+void _handleInterruptMessage(InterruptMessagePtr interruptMessage, HandlerPtr handler);
 void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler);
 
 #endif
