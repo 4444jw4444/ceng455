@@ -6,11 +6,11 @@
 
 void _initializeHandlerBuffer(HandlerBufferPtr handlerBuffer){
 	char* charBuffer;
-	if(!(charBuffer = (char*) malloc(sizeof(char) * HANDLER_BUFFER_SIZE))){
+	if(!(charBuffer = (char*) malloc(sizeof(char) * (HANDLER_BUFFER_SIZE + 1)))){
 		printf("Unable to allocate memory for character buffer.");
 		_task_block();
 	}
-	memset(charBuffer, 0, sizeof(char) * HANDLER_BUFFER_SIZE);
+	memset(charBuffer, 0, sizeof(char) * (HANDLER_BUFFER_SIZE + 1));
 
 	handlerBuffer->currentSize = 0;
 	handlerBuffer->maxSize = HANDLER_BUFFER_SIZE;
@@ -53,103 +53,22 @@ void _initializeHandlerMutex(MUTEX_STRUCT* mutex){
 }
 
 /*=============================================================
-                      BUFFER MANAGEMENT
+                          MESSAGES
  ==============================================================*/
 
-void _printCharacterToTerminal(char* character, uint32_t terminalId){
-	UART_DRV_SendData(terminalId, character, sizeof(char));
-}
-
-bool _addCharacterToEndOfBuffer(char character, HandlerBufferPtr buffer){
-	int currentSize = buffer->currentSize;
-	if(currentSize == buffer->maxSize){
-		return false;
-	}
-	buffer->characters[currentSize] = character;
-	buffer->currentSize++;
-	return true;
-}
-
-void _removeCharacterFromEndOfBuffer(HandlerBufferPtr buffer){
-	int currentSize = buffer->currentSize;
-	if(currentSize == 0){
-		return;
+SerialMessagePtr _initializeSerialMessage(char* message, _queue_id destination){
+	SerialMessagePtr serialMessage = (SerialMessagePtr)_msg_alloc(g_SerialMessagePool);
+	if (serialMessage == NULL) {
+	 printf("Could not allocate a message.\n");
+	 _task_block();
 	}
 
-	buffer->characters[currentSize-1] = '\0';
-	buffer->currentSize--;
-}
+	serialMessage->HEADER.SIZE = sizeof(SerialMessage);
+	serialMessage->HEADER.TARGET_QID = destination;
+	serialMessage->length = strlen(message);
+	serialMessage->content = message;
 
-void _handleNewline(HandlerPtr handler){
-
-}
-
-void _handleCarriageReturn(HandlerPtr handler){
-
-}
-
-void _handleBackspace(HandlerPtr handler){
-
-}
-
-void _handleEraseLine(HandlerPtr handler){
-
-}
-
-void _handleEraseWord(HandlerPtr handler){
-
-}
-
-void _handleTab(HandlerPtr handler){
-
-}
-
-void _handleBell(HandlerPtr handler){
-
-}
-
-void _handleEscape(HandlerPtr handler){
-
-}
-
-void _handleRegularCharacter(char character, HandlerPtr handler){
-	_addCharacterToEndOfBuffer(character, &handler->buffer);
-}
-
-void _handleCharacterInput(char character, HandlerPtr handler){
-	switch(character){
-		case 0x0A: // \n
-			_handleNewline(handler);
-			break;
-		case 0x0D: // \r
-			_handleCarriageReturn(handler);
-			break;
-		case 0x08: // Backspace
-			_handleBackspace(handler);
-			break;
-		case 0x15: // CTRL U
-			_handleEraseLine(handler);
-			break;
-		case 0x17: // CTRL W
-			_handleEraseWord(handler);
-			break;
-		case 0x09: // Tab
-			_handleTab(handler);
-			break;
-		case 0x07: // Bell
-			_handleBell(handler);
-			break;
-		case 0x1B: // Esc
-			_handleEscape(handler);
-			break;
-		default:
-			_handleRegularCharacter(character, handler);
-			break;
-	}
-}
-
-void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler){
-
+	return serialMessage;
 }
 
 /*=============================================================
@@ -213,6 +132,18 @@ _queue_id _getReaderQueueNum(_task_id taskId, HandlerPtr handler){
 	return MSGQ_NULL_QUEUE_ID;
 }
 
+void _writeMessageToReaders(char* message, HandlerReaderListPtr readerList){
+	SerialMessagePtr serialMessage;
+	for(int i=0; i<readerList->count; i++){
+		serialMessage = _initializeSerialMessage(message, readerList->readers[i]->queueId);
+		bool result = _msgq_send(serialMessage);
+		if (result != TRUE){
+			printf("Failed to send message to reader %d.\n", readerList->readers[i]->taskId);
+			_task_block();
+		}
+	}
+}
+
 /*=============================================================
                       WRITER MANAGEMENT
  ==============================================================*/
@@ -221,6 +152,129 @@ void _clearHandlerWriter(_task_id taskId, HandlerPtr handler){
 	if(handler->currentWriter == taskId){
 		handler->currentWriter = 0;
 	}
+}
+
+/*=============================================================
+                      BUFFER MANAGEMENT
+ ==============================================================*/
+
+void _printCharacterToTerminal(char character, uint32_t terminalId){
+	UART_DRV_SendData(terminalId, &character, sizeof(char));
+}
+
+void _printStringToTerminal(char* string, int size, uint32_t terminalId){
+	UART_DRV_SendData(terminalId, string, sizeof(char) * size);
+}
+
+bool _addCharacterToEndOfBuffer(char character, HandlerBufferPtr buffer){
+	int currentSize = buffer->currentSize;
+	if(currentSize == buffer->maxSize){
+		return false;
+	}
+	buffer->characters[currentSize] = character;
+	buffer->currentSize++;
+	return true;
+}
+
+char _removeCharacterFromEndOfBuffer(HandlerBufferPtr buffer){
+	int currentSize = buffer->currentSize;
+	if(currentSize == 0){
+		return '\0';
+	}
+	char removedChar = buffer->characters[currentSize-1];
+	buffer->characters[currentSize-1] = '\0';
+	buffer->currentSize--;
+
+	return removedChar;
+}
+
+void _clearBuffer(HandlerBufferPtr buffer){
+	memset(buffer->characters, 0, sizeof(char) * buffer->maxSize + 1);
+	buffer->currentSize = 0;
+}
+
+void _handleNewline(HandlerPtr handler){
+	_addCharacterToEndOfBuffer('\n', &handler->buffer);
+	_printStringToTerminal("\r\n", 2, handler->terminalInstance);
+	_writeMessageToReaders(handler->buffer.characters, &handler->readerList);
+	_clearBuffer(&handler->buffer);
+
+}
+
+void _handleCarriageReturn(HandlerPtr handler){
+	_addCharacterToEndOfBuffer('\r', &handler->buffer);
+}
+
+void _handleBackspace(HandlerPtr handler){
+	_removeCharacterFromEndOfBuffer(&handler->buffer);
+	_printStringToTerminal("\b \b", 3, handler->terminalInstance);
+}
+
+void _handleEraseLine(HandlerPtr handler){
+	for(int i=0; i<handler->buffer.currentSize; i++){
+		_printStringToTerminal("\b \b", 3, handler->terminalInstance);
+	}
+	_clearBuffer(&handler->buffer);
+}
+
+void _handleEraseWord(HandlerPtr handler){
+	char removedChar = _removeCharacterFromEndOfBuffer(&handler->buffer);
+	while(removedChar != ' ' && removedChar != '\0'){
+		_printStringToTerminal("\b \b",  3, handler->terminalInstance);
+		removedChar = _removeCharacterFromEndOfBuffer(&handler->buffer);
+	}
+}
+
+void _handleTab(HandlerPtr handler){
+
+}
+
+void _handleBell(HandlerPtr handler){
+
+}
+
+void _handleEscape(HandlerPtr handler){
+
+}
+
+void _handleRegularCharacter(char character, HandlerPtr handler){
+	_addCharacterToEndOfBuffer(character, &handler->buffer);
+}
+
+void _handleCharacterInput(char character, HandlerPtr handler){
+	switch(character){
+		case 0x0A: // \n
+			_handleNewline(handler);
+			break;
+		case 0x0D: // \r
+			_handleCarriageReturn(handler);
+			break;
+		case 0x08: // Backspace
+			_handleBackspace(handler);
+			break;
+		case 0x15: // CTRL U
+			_handleEraseLine(handler);
+			break;
+		case 0x17: // CTRL W
+			_handleEraseWord(handler);
+			break;
+		case 0x09: // Tab
+			_handleTab(handler);
+			break;
+		case 0x07: // Bell
+			_handleBell(handler);
+			break;
+		case 0x1B: // Esc
+			_handleEscape(handler);
+			break;
+		default:
+			_handleRegularCharacter(character, handler);
+			break;
+	}
+}
+
+void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler){
+
 }
 
 /*=============================================================
@@ -310,17 +364,8 @@ bool PutLine(_queue_id queueId, char* inputString){
 		return false;
 	}
 
-	// Allocate and initialize serial message
-	SerialMessagePtr writeMessage = (SerialMessagePtr)_msg_alloc(g_SerialMessagePool);
-	if (writeMessage == NULL) {
-	 printf("Could not allocate a message.\n");
-	 _task_block();
-	}
-
-	writeMessage->HEADER.SIZE = sizeof(SerialMessage);
-	writeMessage->HEADER.TARGET_QID = queueId;
-	writeMessage->length = stringLen;
-	writeMessage->content = inputString;
+	// Initialize serial message
+	SerialMessagePtr writeMessage = _initializeSerialMessage(inputString, queueId);
 
 	// Write serial message to queue
 	if (!_msgq_send(writeMessage)) {

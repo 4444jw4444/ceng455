@@ -117,15 +117,15 @@ void RunHandler(os_task_param_t task_init_data)
   while (1) {
 #endif
     
-	  	InterruptMessagePtr msg_ptr = _msgq_receive(interruptQueue, 0);
+	  	InterruptMessagePtr interruptMessage = _msgq_receive(interruptQueue, 0);
 
-		if (msg_ptr == NULL) {
-		   printf("Handler failed to receive a message\n");
+		if (interruptMessage == NULL) {
+		   printf("Handler failed to receive an interrupt message.\n");
 		   _task_block();
 		}
-		unsigned char inputChar = msg_ptr->character;
+		unsigned char inputChar = interruptMessage->character;
 		_handleCharacterInput(inputChar, g_Handler);
-		_msg_free(msg_ptr);
+		_msg_free(interruptMessage);
 
 		UART_DRV_SendData(myUART_IDX, inputChar, 1);
 
