@@ -43,6 +43,7 @@
 #include "myUART.h"
 #include "HandlerTask.h"
 #include "UserTaskOne.h"
+#include "UserTaskTwo.h"
 #include <message.h>
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +82,17 @@ void RunHandler(os_task_param_t task_init_data);
 ** ===================================================================
 */
 void UserTaskOne_task(os_task_param_t task_init_data);
+
+/*
+** ===================================================================
+**     Callback    : UserTaskTwo_task
+**     Description : Task function entry.
+**     Parameters  :
+**       task_init_data - OS task parameter
+**     Returns : Nothing
+** ===================================================================
+*/
+void UserTaskTwo_task(os_task_param_t task_init_data);
 
 /* END os_tasks */
 

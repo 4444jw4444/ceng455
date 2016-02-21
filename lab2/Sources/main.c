@@ -44,6 +44,7 @@
 #include "myUART.h"
 #include "HandlerTask.h"
 #include "UserTaskOne.h"
+#include "UserTaskTwo.h"
 #if CPU_INIT_CONFIG
   #include "Init_Config.h"
 #endif

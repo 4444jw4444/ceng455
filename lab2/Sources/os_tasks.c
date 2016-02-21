@@ -4,6 +4,7 @@
 #include "rtos_main_task.h"
 #include "os_tasks.h"
 #include "handler.c"
+#include <stdbool.h>
 
 #define KEY_BS 0x08
 #define KEY_CR 0x0D
@@ -32,7 +33,7 @@ _pool_id interrupt_message_pool;
 void serial_task(os_task_param_t task_init_data)
 {
   /* Write your local variable definition here */
-  printf("SerialTask Created!\n\r");
+  printf("\nSerialTask Created!\n\r");
 
   char buf[50];
   sprintf(buf, "\r\nType here: \r\n");
@@ -154,14 +155,91 @@ void RunHandler(os_task_param_t task_init_data)
 void UserTaskOne_task(os_task_param_t task_init_data)
 {
   /* Write your local variable definition here */
-  
+  printf("UserTaskOne started!\n");
+  OSA_TimeDelay(1000);
+  	//tests
+	//open r getline, receive lines
+	//already openr return false
+	//openw print out to console
+	//already openw return false
+	//if getline called before openr return false
+	//if putline called before openw return false
+	//close wipes read and write
+	//close return false if no priv
+	//check: readers read, writers write
+
+	//T1
+	//getline false
+	char* outputString;
+	if(!GetLine(outputString)){
+		printf("Getline early check: PASS\n");
+	}else{
+		printf("Getline early check: FAIL");
+	}
+	//openr
+	if(OpenR(_initializeQueue(10))){
+		printf("OpenR privileges check: PASS\n");
+	}else{
+		printf("OpenR privileges check: FAIL\n");
+	}
+	//openr false
+	if(!OpenR(_initializeQueue(11))){
+		printf("OpenR twice check: PASSt\n");
+	}else{
+		printf("OpenR twice check: FAIL\n");
+	}
+	//getline should block
+	GetLine(outputString);
+	printf("UserTaskOne output string: %s\n", outputString);
+	//close
+
+	//close false
+#ifdef PEX_USE_RTOS
+  while (1) {
+#endif
+
+
+
+
+
+	  //
+    /* Write your code here ... */
+    //openr
+	//
+
+    
+#ifdef PEX_USE_RTOS   
+  }
+#endif    
+}
+
+/*
+** ===================================================================
+**     Callback    : UserTaskTwo_task
+**     Description : Task function entry.
+**     Parameters  :
+**       task_init_data - OS task parameter
+**     Returns : Nothing
+** ===================================================================
+*/
+void UserTaskTwo_task(os_task_param_t task_init_data)
+{
+  /* Write your local variable definition here */
+	 printf("UserTaskTwo started!\n");
 #ifdef PEX_USE_RTOS
   while (1) {
 #endif
     /* Write your code here ... */
     
-    
-    OSA_TimeDelay(10);                 /* Example code (for task release) */
+	  OSA_TimeDelay(10);
+	  //T2
+	  //delay(5sec)
+	  //putline
+	  //openw
+	  //openw false
+	  //putline should block
+	  //close
+	  //close false
    
     
     
