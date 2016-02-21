@@ -32,23 +32,27 @@
                       EXPORTED TYPES
  ==============================================================*/
 
+// Defines a character buffer used by the handler
 typedef struct HandlerBuffer {
 	int currentSize;
 	int maxSize;
 	char* characters;
 } HandlerBuffer, * HandlerBufferPtr;
 
+// Defines a binding between the handler and a user task with read access
 typedef struct HandlerReader{
 	_task_id taskId;
 	_queue_id queueId;
 } HandlerReader, *HandlerReaderPtr;
 
+// Defines a list of HandlerReader objects
 typedef struct HandlerReaderList{
 	int count;
 	int maxSize;
 	HandlerReaderPtr* readers;
 } HandlerReaderList, * HandlerReaderListPtr;
 
+// Defines a structure for maintaining the handler's internal state
 typedef struct Handler{
 	HandlerReaderList readerList;
 	HandlerBuffer buffer;
@@ -58,16 +62,19 @@ typedef struct Handler{
 	uint32_t terminalInstance;
 } Handler, * HandlerPtr;
 
+// Defines a generic message pointer used to resolve anonymous message pointers
 typedef struct GenericMessage{
 	MESSAGE_HEADER_STRUCT HEADER;
 } GenericMessage, * GenericMessagePtr;
 
+// Defines a message sent between the handler and a user task
 typedef struct SerialMessage{
 	MESSAGE_HEADER_STRUCT HEADER;
 	int length;
 	char* content;
 } SerialMessage, * SerialMessagePtr;
 
+// Defines a message sent from the UART ISR to the handler
 typedef struct InterruptMessage
 {
    MESSAGE_HEADER_STRUCT   HEADER;
@@ -78,11 +85,10 @@ typedef struct InterruptMessage
                       GLOBAL VARIABLES
  ==============================================================*/
 
-extern HandlerPtr g_Handler;
-extern MUTEX_STRUCT g_HandlerMutex;
-
-extern _pool_id g_InterruptMessagePool;
-extern _pool_id g_SerialMessagePool;
+extern _pool_id g_InterruptMessagePool;		// A message pool for messages sent between from the UART event handler to the handler task
+extern _pool_id g_SerialMessagePool;		// A message pool for messages sent between the handler task and its user tasks
+extern HandlerPtr g_Handler;				// The global handler instance
+extern MUTEX_STRUCT g_HandlerMutex;			// The mutex controlling access to the handler's internal state
 
 /*=============================================================
                       USER TASK INTERFACE
@@ -100,7 +106,6 @@ bool Close(void);
 
 void _initializeHandler(HandlerPtr handler, _queue_id charInputQueue, _queue_id bufferInputQueue, uint32_t terminalInstance);
 void _initializeHandlerMutex(MUTEX_STRUCT* mutex);
-void _handleCharacterInput(char character, HandlerPtr handler);
 void _handleInterruptMessage(InterruptMessagePtr interruptMessage, HandlerPtr handler);
 void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler);
 
