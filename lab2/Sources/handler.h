@@ -58,6 +58,10 @@ typedef struct Handler{
 	uint32_t terminalInstance;
 } Handler, * HandlerPtr;
 
+typedef struct GenericMessage{
+	MESSAGE_HEADER_STRUCT HEADER;
+} GenericMessage, * GenericMessagePtr;
+
 typedef struct SerialMessage{
 	MESSAGE_HEADER_STRUCT HEADER;
 	int length;

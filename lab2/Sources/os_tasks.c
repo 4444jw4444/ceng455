@@ -117,13 +117,25 @@ void RunHandler(os_task_param_t task_init_data)
   while (1) {
 #endif
     
-	  	InterruptMessagePtr interruptMessage = _msgq_receive(interruptQueue, 0);
+	  	GenericMessagePtr receivedMessage = (GenericMessagePtr) _msgq_receive(MSGQ_ANY_QUEUE, 0);
+	  	if (receivedMessage == NULL){
+			   printf("Handler failed to receive a message.\n");
+			   _task_block();
+	  	}
 
-		if (interruptMessage == NULL) {
-		   printf("Handler failed to receive an interrupt message.\n");
-		   _task_block();
+		if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
+			printf("Mutex lock failed.\n");
+			_task_block();
 		}
-		_handleInterruptMessage(interruptMessage, g_Handler);
+
+	  	if(receivedMessage->HEADER.TARGET_QID == inputQueue){
+	  		_handleWriteMessage((SerialMessagePtr) receivedMessage, g_Handler);
+	  	}
+	  	else if (receivedMessage->HEADER.TARGET_QID == interruptQueue){
+	  		_handleInterruptMessage((InterruptMessagePtr) receivedMessage, g_Handler);
+	  	}
+
+	  	_mutex_unlock(&g_HandlerMutex);
 
 #ifdef PEX_USE_RTOS   
   }
