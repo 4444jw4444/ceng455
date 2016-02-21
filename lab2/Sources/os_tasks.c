@@ -50,6 +50,12 @@ void serial_task(os_task_param_t task_init_data)
 #endif    
 }
 
+// Handler Globals
+_pool_id g_InterruptMessagePool;
+_pool_id g_SerialMessagePool;
+HandlerPtr g_Handler;
+MUTEX_STRUCT g_HandlerMutex;
+
 /*
 ** ===================================================================
 **     Callback    : RunHandler
@@ -60,129 +66,68 @@ void serial_task(os_task_param_t task_init_data)
 ** ===================================================================
 */
 
-_pool_id interrupt_message_pool;
+void _initializeMessagePools(){
+	// Initialize interrupt message pool
+	g_InterruptMessagePool = _msgpool_create(sizeof(InterruptMessage),
+			INTERRUPT_MESSAGE_POOL_INITIAL_SIZE,
+			INTERRUPT_MESSAGE_POOL_GROWTH_RATE,
+			INTERRUPT_MESSAGE_POOL_MAX_SIZE);
+	if(g_InterruptMessagePool == MSGPOOL_NULL_POOL_ID){
+		printf("Failed to create the interrupt message pool.\n");
+		_task_block();
+	}
 
-#define MAX_BUFFER_SIZE 128
-unsigned char stringBuffer[MAX_BUFFER_SIZE];
-int bufferIndex;
-
-void character(unsigned char inputChar){
-	if(bufferIndex < MAX_BUFFER_SIZE-1){
-		addCharacter(inputChar);
-		unsigned char holder[2];
-		holder[0] = inputChar;
-		holder[1] = '\0';
-		UART_DRV_SendData(myUART_IDX, holder, sizeof(holder));
-		printf("String so far: %s\n", stringBuffer);
-	}else{
-		printf("Warning: Buffer Full!");
+	// Initialize serial message pool
+	g_SerialMessagePool = _msgpool_create(sizeof(SerialMessage),
+			SERIAL_MESSAGE_POOL_INITIAL_SIZE,
+			SERIAL_MESSAGE_POOL_GROWTH_RATE,
+			SERIAL_MESSAGE_POOL_MAX_SIZE);
+	if(g_SerialMessagePool == MSGPOOL_NULL_POOL_ID){
+		printf("Failed to create the serial message pool.\n");
+		_task_block();
 	}
 }
 
-void addCharacter(unsigned char inputChar){
-	stringBuffer[bufferIndex] = inputChar;
-	bufferIndex ++;
-	return;
-}
-
-void backspace(unsigned char inputChar){
-	bufferIndex--;
-	stringBuffer[bufferIndex] = ' ';
-	unsigned char holder[2];
-	holder[0] = inputChar;
-	holder[1] = '\0';
-	UART_DRV_SendData(myUART_IDX, holder, sizeof(char) * 2);
-	UART_DRV_SendData(myUART_IDX, &stringBuffer[bufferIndex], sizeof(unsigned char));
-	printf("String so far: %s\n", stringBuffer);
-	return;
-}
-
-void bell(){
-	return;
-}
-
-void hTab(){
-	return;
-}
-
-void linefeed(){
-	return;
-}
-
-void carriageReturn(){
-	return;
-}
-
-void ctrlU(){
-	return;
-}
-
-void ctrlW(){
-	return;
-}
-
-void esc(){
-	return;
+_queue_id _initializeQueue(int queueNum){
+	// Initialize interrupt queue
+	_queue_id queueId = _msgq_open(queueNum, 0);
+	if(queueId == 0){
+		printf("Failed to open queue %d.\n", queueNum);
+		_task_block();
+	}
+	return queueId;
 }
 
 void RunHandler(os_task_param_t task_init_data)
 {
-	bufferIndex = 0;
-	printf("Handler task started.\r\n");
+	printf("Handler task started.\n");
 
-	_queue_id          input_qid;
-	input_qid = _msgq_open(HANDLER_INPUT_QUEUE, 0);
+	// Initialize queues and message pools
+	_initializeMessagePools();
+	_queue_id interruptQueue = _initializeQueue(HANDLER_INTERRUPT_QUEUE_ID);
+	_queue_id inputQueue = _initializeQueue(HANDLER_INPUT_QUEUE_ID);
 
-	if (input_qid == 0) {
-	      printf("\nCould not open the server message queue\n");
-	      _task_block();
-	}
-
-	 /* create a message pool */
-	interrupt_message_pool = _msgpool_create(sizeof(INTERRUPT_MESSAGE), INITIAL_POOL_SIZE, 1, 10);
-
-	//check that the pool was created
-	if (interrupt_message_pool == MSGPOOL_NULL_POOL_ID) {
-		printf("\nCount not create a message pool\n");
-		_task_block();
-	}
-
+	// Initialize Handler
+	Handler handler;
+	g_Handler = &handler;
+	_initializeHandlerMutex(&g_HandlerMutex);
+	_initializeHandler(g_Handler, interruptQueue, inputQueue, myUART_IDX);
 
 #ifdef PEX_USE_RTOS
   while (1) {
 #endif
     
-	  	INTERRUPT_MESSAGE_PTR msg_ptr = _msgq_receive(input_qid, 0);
+	  	InterruptMessagePtr msg_ptr = _msgq_receive(interruptQueue, 0);
 
 		if (msg_ptr == NULL) {
-		   printf("\nCould not receive a message\n");
+		   printf("Handler failed to receive a message\n");
 		   _task_block();
 		}
-		unsigned char inputChar = msg_ptr->CHARACTER;
+		unsigned char inputChar = msg_ptr->character;
+		_handleCharacterInput(inputChar, g_Handler);
+		_msg_free(msg_ptr);
 
-		if(inputChar == 0x08 && bufferIndex > 0){//backspace
-			backspace(inputChar);
-		}else if(inputChar == 0x07){//Bell
-			bell();
-		}else if(inputChar == 0x09){//HTab
-			hTab();
-		}else if(inputChar == 0x0A){//LineFeed
-			linefeed();
-		}else if(inputChar == 0x0D){//Carriage Return
-			carriageReturn();
-		}else if(inputChar == 0x15){//CTRL U
-			ctrlU();
-		}else if(inputChar == 0x17){//CTRL W
-			ctrlW();
-		}else if(inputChar == 0x1B){//Esc
-			esc();
-		}else{//regular character
-			character(inputChar);
-		}
-
-
-
-
+		UART_DRV_SendData(myUART_IDX, inputChar, 1);
 
 #ifdef PEX_USE_RTOS   
   }

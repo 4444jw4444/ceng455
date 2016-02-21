@@ -30,8 +30,7 @@
 #include "Cpu.h"
 #include "Events.h"
 #include "rtos_main_task.h"
-#include "os_tasks.h"
-#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif 
@@ -55,29 +54,23 @@ extern "C" {
 
 void myUART_RxCallback(uint32_t instance, void * uartState)
 {
-  /* Write your code here ... */
 	//UART_DRV_SendData(myUART_IDX, myRxBuff, sizeof(myRxBuff));
 
-	/*allocate a message*/
-	INTERRUPT_MESSAGE_PTR msg_ptr = (INTERRUPT_MESSAGE_PTR)_msg_alloc(interrupt_message_pool);
-
-	if (msg_ptr == NULL) {
+	// Allocate an interrupt message
+	InterruptMessagePtr interruptMessage = (InterruptMessagePtr)_msg_alloc(g_InterruptMessagePool);
+	if (interruptMessage == NULL) {
 	 _task_block();
 	}
-	//msg_ptr->HEADER.SOURCE_QID = ;
-	msg_ptr->HEADER.TARGET_QID = _msgq_get_id(0, HANDLER_INPUT_QUEUE);
-	msg_ptr->HEADER.SIZE = sizeof(INTERRUPT_MESSAGE);
-	msg_ptr->CHARACTER = myRxBuff[0];
 
-	bool result = _msgq_send(msg_ptr);
+	interruptMessage->HEADER.TARGET_QID = _msgq_get_id(0, HANDLER_INTERRUPT_QUEUE_ID);
+	interruptMessage->HEADER.SIZE = sizeof(InterruptMessage);
+	interruptMessage->character = myRxBuff[0];
 
+	// Send the message to the handler
+	bool result = _msgq_send(interruptMessage);
 	if (result != TRUE) {
-	 _task_block();
+		_task_block();
 	}
-
-	_msg_free(msg_ptr);
-
-	return;
 }
 
 /* END Events */

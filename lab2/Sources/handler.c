@@ -14,7 +14,7 @@ void _initializeHandlerBuffer(HandlerBufferPtr handlerBuffer){
 
 	handlerBuffer->currentSize = 0;
 	handlerBuffer->maxSize = HANDLER_BUFFER_SIZE;
-	handlerBuffer->buffer = charBuffer;
+	handlerBuffer->characters = charBuffer;
 }
 
 void _initializeHandlerReaderList(HandlerReaderListPtr readerList){
@@ -30,22 +30,23 @@ void _initializeHandlerReaderList(HandlerReaderListPtr readerList){
 	readerList->readers = readers;
 }
 
-void _initializeHandler(HandlerPtr handler, _queue_id charInputQueue, _queue_id bufferInputQueue){
+void _initializeHandler(HandlerPtr handler, _queue_id charInputQueue, _queue_id bufferInputQueue, uint32_t terminalInstance){
 	_initializeHandlerBuffer(&handler->buffer);
 	_initializeHandlerReaderList(&handler->readerList);
 	handler->currentWriter = 0;
 	handler->charInputQueue = charInputQueue;
 	handler->bufferInputQueue = bufferInputQueue;
+	handler->terminalInstance = terminalInstance;
 }
 
-void _initializeHandlerMutex(HandlerPtr handler){
+void _initializeHandlerMutex(MUTEX_STRUCT* mutex){
 	MUTEX_ATTR_STRUCT handlerMutexAttributes;
 	if(_mutatr_init(&handlerMutexAttributes) != MQX_OK){
 		printf("Mutex attribute initialization failed.\n");
 		_task_block();
 	}
 
-	if(_mutex_init(&g_HandlerMutex, &handlerMutexAttributes) != MQX_OK){
+	if(_mutex_init(mutex, &handlerMutexAttributes) != MQX_OK){
 		printf("Mutex initialization failed.\n");
 		_task_block();
 	}
@@ -54,6 +55,102 @@ void _initializeHandlerMutex(HandlerPtr handler){
 /*=============================================================
                       BUFFER MANAGEMENT
  ==============================================================*/
+
+void _printCharacterToTerminal(char* character, uint32_t terminalId){
+	UART_DRV_SendData(terminalId, character, sizeof(char));
+}
+
+bool _addCharacterToEndOfBuffer(char character, HandlerBufferPtr buffer){
+	int currentSize = buffer->currentSize;
+	if(currentSize == buffer->maxSize){
+		return false;
+	}
+	buffer->characters[currentSize] = character;
+	buffer->currentSize++;
+	return true;
+}
+
+void _removeCharacterFromEndOfBuffer(HandlerBufferPtr buffer){
+	int currentSize = buffer->currentSize;
+	if(currentSize == 0){
+		return;
+	}
+
+	buffer->characters[currentSize-1] = '\0';
+	buffer->currentSize--;
+}
+
+void _handleNewline(HandlerPtr handler){
+
+}
+
+void _handleCarriageReturn(HandlerPtr handler){
+
+}
+
+void _handleBackspace(HandlerPtr handler){
+
+}
+
+void _handleEraseLine(HandlerPtr handler){
+
+}
+
+void _handleEraseWord(HandlerPtr handler){
+
+}
+
+void _handleTab(HandlerPtr handler){
+
+}
+
+void _handleBell(HandlerPtr handler){
+
+}
+
+void _handleEscape(HandlerPtr handler){
+
+}
+
+void _handleRegularCharacter(char character, HandlerPtr handler){
+	_addCharacterToEndOfBuffer(character, &handler->buffer);
+}
+
+void _handleCharacterInput(char character, HandlerPtr handler){
+	switch(character){
+		case 0x0A: // \n
+			_handleNewline(handler);
+			break;
+		case 0x0D: // \r
+			_handleCarriageReturn(handler);
+			break;
+		case 0x08: // Backspace
+			_handleBackspace(handler);
+			break;
+		case 0x15: // CTRL U
+			_handleEraseLine(handler);
+			break;
+		case 0x17: // CTRL W
+			_handleEraseWord(handler);
+			break;
+		case 0x09: // Tab
+			_handleTab(handler);
+			break;
+		case 0x07: // Bell
+			_handleBell(handler);
+			break;
+		case 0x1B: // Esc
+			_handleEscape(handler);
+			break;
+		default:
+			_handleRegularCharacter(character, handler);
+			break;
+	}
+}
+
+void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler){
+
+}
 
 /*=============================================================
                       READER MANAGEMENT

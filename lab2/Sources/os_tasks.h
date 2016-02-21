@@ -47,25 +47,6 @@
 extern "C" {
 #endif 
 
-//Global Queues
-#define HANDLER_INPUT_QUEUE 1
-//#define HANDLER_OUTPUT_QUEUE 2
-
-//Message Pool Definitions
-/* This structure contains a data field and a message header structure */
-typedef struct interrupt_message
-{
-   MESSAGE_HEADER_STRUCT   HEADER;
-   unsigned char           CHARACTER;
-} INTERRUPT_MESSAGE, * INTERRUPT_MESSAGE_PTR;
-
-//Message Pool
-extern _pool_id interrupt_message_pool;
-
-//Initial number of messages in the pool
-#define INITIAL_POOL_SIZE 5
-
-
 /*
 ** ===================================================================
 **     Callback    : serial_task
