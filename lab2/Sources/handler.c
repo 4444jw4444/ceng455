@@ -317,7 +317,7 @@ void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler){
 	char* messageString = serialMessage->content;
 
 	for(int i=0; i < serialMessage->length; i++){
-		_handleCharacterInput(messageString[i]);
+		_handleCharacterInput(messageString[i], handler);
 	}
 	_msg_free(serialMessage);
 }
