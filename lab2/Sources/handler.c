@@ -23,7 +23,7 @@ void _initializeHandlerReaderList(HandlerReaderListPtr readerList){
 		printf("Unable to allocate memory for reader list.");
 		_task_block();
 	}
-	memset(readerList, 0, sizeof(HandlerReaderPtr) * HANDLER_READER_MAX);
+	memset(readers, 0, sizeof(HandlerReaderPtr) * HANDLER_READER_MAX);
 
 	readerList->count = 0;
 	readerList->maxSize = HANDLER_READER_MAX;
@@ -239,6 +239,7 @@ void _handleEscape(HandlerPtr handler){
 
 void _handleRegularCharacter(char character, HandlerPtr handler){
 	_addCharacterToEndOfBuffer(character, &handler->buffer);
+	_printCharacterToTerminal(character, handler->terminalInstance);
 }
 
 void _handleCharacterInput(char character, HandlerPtr handler){

@@ -103,9 +103,9 @@ void RunHandler(os_task_param_t task_init_data)
 	printf("Handler task started.\n");
 
 	// Initialize queues and message pools
-	_initializeMessagePools();
 	_queue_id interruptQueue = _initializeQueue(HANDLER_INTERRUPT_QUEUE_ID);
 	_queue_id inputQueue = _initializeQueue(HANDLER_INPUT_QUEUE_ID);
+	_initializeMessagePools();
 
 	// Initialize Handler
 	Handler handler;
@@ -126,8 +126,6 @@ void RunHandler(os_task_param_t task_init_data)
 		unsigned char inputChar = interruptMessage->character;
 		_handleCharacterInput(inputChar, g_Handler);
 		_msg_free(interruptMessage);
-
-		UART_DRV_SendData(myUART_IDX, inputChar, 1);
 
 #ifdef PEX_USE_RTOS   
   }
