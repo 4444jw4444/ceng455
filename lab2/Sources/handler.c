@@ -206,11 +206,13 @@ void _clearBuffer(HandlerBufferPtr buffer){
 }
 
 void _handleNewline(HandlerPtr handler){
-	_addCharacterToEndOfBuffer('\n', &handler->buffer);
 	_printStringToTerminal("\r\n", 2, handler->terminalInstance);
-	_writeMessageToReaders(handler->buffer.characters, &handler->readerList);
-	_clearBuffer(&handler->buffer);
-
+	if (handler->buffer.currentSize > 0){
+		_addCharacterToEndOfBuffer('\r', &handler->buffer);
+		_addCharacterToEndOfBuffer('\n', &handler->buffer);
+		_writeMessageToReaders(handler->buffer.characters, &handler->readerList);
+		_clearBuffer(&handler->buffer);
+	}
 }
 
 void _handleCarriageReturn(HandlerPtr handler){
@@ -276,10 +278,8 @@ void _handleRegularCharacter(char character, HandlerPtr handler){
 void _handleCharacterInput(char character, HandlerPtr handler){
 	switch(character){
 		case 0x0A: // \n
-			_handleNewline(handler);
-			break;
 		case 0x0D: // \r
-			_handleCarriageReturn(handler);
+			_handleNewline(handler);
 			break;
 		case 0x08: // Backspace
 			_handleBackspace(handler);
@@ -300,13 +300,26 @@ void _handleCharacterInput(char character, HandlerPtr handler){
 			_handleEscape(handler);
 			break;
 		default:
-			_handleRegularCharacter(character, handler);
+			if(isprint((unsigned char)character)){
+				_handleRegularCharacter(character, handler);
+			}
 			break;
 	}
 }
 
-void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler){
+void _handleInterruptMessage(InterruptMessagePtr interruptMessage, HandlerPtr handler){
+	char inputChar = interruptMessage->character;
+	_handleCharacterInput(inputChar, g_Handler);
+	_msg_free(interruptMessage);
+}
 
+void _handleWriteMessage(SerialMessagePtr serialMessage, HandlerPtr handler){
+	char* messageString = serialMessage->content;
+
+	for(int i=0; i < serialMessage->length; i++){
+		_handleCharacterInput(messageString[i]);
+	}
+	_msg_free(serialMessage);
 }
 
 /*=============================================================
