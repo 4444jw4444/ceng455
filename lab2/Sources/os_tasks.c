@@ -195,6 +195,10 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 	}else{
 		printf("Close twice: FAIL\n");
 	}
+	OpenR(_initializeQueue(12));
+	  //getline should block
+	  	GetLine(outputString);
+	  	printf("UserTaskOne output string: %s\n", &outputString);
 #ifdef PEX_USE_RTOS
   while (1) {
 #endif
@@ -202,9 +206,7 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 
 	  OSA_TimeDelay(10);
 
-	  //getline should block
-//	  	GetLine(outputString);
-//	  	printf("UserTaskOne output string: %s\n", outputString);
+
 #ifdef PEX_USE_RTOS   
   }
 #endif
@@ -230,11 +232,23 @@ void UserTaskTwo_task(os_task_param_t task_init_data)
 	  }
 	  //openw
 	  _queue_id qID = OpenW();
-	  //if(qID != )
+	  if(qID != 0){
+		  printf("OpenW check: PASS\n");
+	  }else{
+		  printf("OpenW check: FAIL\n");
+	  }
 	  //openw false
+	  if(!OpenW() != 0){
+		  printf("OpenW check: PASS\n");
+	  }else{
+		  printf("OpenW check: FAIL\n");
+	  }
 	  //putline should block
-	  //close
-	  //close false
+	  if(PutLine(qID, inputString)){
+		  printf("PutLine check: PASS\n");
+	  }else{
+		  printf("PutLine check: FAIL\n");
+	  }
 #ifdef PEX_USE_RTOS
   while (1) {
 #endif
