@@ -215,10 +215,6 @@ void _handleNewline(HandlerPtr handler){
 	}
 }
 
-void _handleCarriageReturn(HandlerPtr handler){
-	_addCharacterToEndOfBuffer('\r', &handler->buffer);
-}
-
 void _handleBackspace(HandlerPtr handler){
 	_removeCharacterFromEndOfBuffer(&handler->buffer);
 	_printStringToTerminal(BackspaceString, BackspaceStringLen, handler->terminalInstance);
