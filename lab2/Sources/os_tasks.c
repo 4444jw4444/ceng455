@@ -164,7 +164,8 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 
 	//T1
 	//getline false
-	char* outputString;
+
+	char outputString[HANDLER_BUFFER_SIZE];
 	if(!GetLine(outputString)){
 		printf("Getline early check: PASS\n");
 	}else{
@@ -186,9 +187,17 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 	GetLine(outputString);
 	printf("UserTaskOne output string: %s\n", outputString);
 	//close
-
+	if(Close()){
+		printf("Close: PASS\n");
+	}else{
+		printf("Close: FAIL\n");
+	}
 	//close false
-	  //
+	if(!Close()){
+		printf("Close: PASS\n");
+	}else{
+		printf("Close: FAIL\n");
+	}
 #ifdef PEX_USE_RTOS
   while (1) {
 #endif
@@ -208,20 +217,27 @@ void UserTaskTwo_task(os_task_param_t task_init_data)
 {
   /* Write your local variable definition here */
 	 printf("UserTaskTwo started!\n");
-#ifdef PEX_USE_RTOS
-  while (1) {
-#endif
-    /* Write your code here ... */
-    
-	  OSA_TimeDelay(10);
+	 OSA_TimeDelay(3000);
 	  //T2
 	  //delay(5sec)
 	  //putline
+	  char inputString[HANDLER_BUFFER_SIZE];
+	  if(!PutLine(0, inputString)){
+		  printf("PutLine early check: PASS");
+	  }else{
+		  printf("PutLine early check: FAIL");
+	  }
 	  //openw
 	  //openw false
 	  //putline should block
 	  //close
 	  //close false
+#ifdef PEX_USE_RTOS
+  while (1) {
+#endif
+    /* Write your code here ... */
+
+
 #ifdef PEX_USE_RTOS   
   }
 #endif    
