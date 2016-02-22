@@ -63,10 +63,21 @@ SerialMessagePtr _initializeSerialMessage(char* message, _queue_id destination){
 	 _task_block();
 	}
 
+	int messageSize = strlen(message);
+
+	// Allocate a new message string
+	char* messageCopy;
+	if(!(messageCopy = (char*) malloc(sizeof(char) * messageSize))){
+		printf("Could not allocate a message copy.");
+		_task_block();
+	}
+
+	strncpy(messageCopy, message, messageSize);
+
 	serialMessage->HEADER.SIZE = sizeof(SerialMessage);
 	serialMessage->HEADER.TARGET_QID = destination;
-	serialMessage->length = strlen(message);
-	serialMessage->content = message;
+	serialMessage->length = messageSize;
+	serialMessage->content = messageCopy;
 
 	return serialMessage;
 }
