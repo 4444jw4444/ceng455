@@ -92,7 +92,7 @@ bool _addHandlerReader(_task_id taskId, _queue_id queue, HandlerPtr handler){
 	reader->queueId = queue;
 	reader->taskId = taskId;
 
-	handler->readerList.readers[currentReaderCount + 1] = reader;
+	handler->readerList.readers[currentReaderCount] = reader;
 	handler->readerList.count++;
 
 	return true;
