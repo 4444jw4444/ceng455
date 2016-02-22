@@ -98,7 +98,7 @@ bool _addHandlerReader(_task_id taskId, _queue_id queue, HandlerPtr handler){
 	return true;
 }
 
-void _clearHandlerReader(_task_id taskId, HandlerPtr handler){
+bool _clearHandlerReader(_task_id taskId, HandlerPtr handler){
 	int numReaders = handler->readerList.count;
 	HandlerReaderPtr* readers = handler->readerList.readers;
 
@@ -114,9 +114,10 @@ void _clearHandlerReader(_task_id taskId, HandlerPtr handler){
 				readers[j] = readers[j+1];
 			}
 			handler->readerList.count--;
-			break;
+			return true;
 		}
 	}
+	return false;
 }
 
 _queue_id _getReaderQueueNum(_task_id taskId, HandlerPtr handler){
@@ -148,10 +149,12 @@ void _writeMessageToReaders(char* message, HandlerReaderListPtr readerList){
                       WRITER MANAGEMENT
  ==============================================================*/
 
-void _clearHandlerWriter(_task_id taskId, HandlerPtr handler){
+bool _clearHandlerWriter(_task_id taskId, HandlerPtr handler){
 	if(handler->currentWriter == taskId){
 		handler->currentWriter = 0;
+		return true;
 	}
+	return false;
 }
 
 /*=============================================================
@@ -424,11 +427,12 @@ bool Close(void){
 	}
 
 	_task_id thisTask = _task_get_id();
-	_clearHandlerReader(thisTask, g_Handler);
-	_clearHandlerWriter(thisTask, g_Handler);
+
+	bool closeResult = _clearHandlerReader(thisTask, g_Handler) || _clearHandlerWriter(thisTask, g_Handler);
 
 	_mutex_unlock(&g_HandlerMutex);
-	return true;
+
+	return closeResult;
 }
 
 
