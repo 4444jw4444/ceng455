@@ -179,13 +179,10 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 	}
 	//openr false
 	if(!OpenR(_initializeQueue(11))){
-		printf("OpenR twice check: PASSt\n");
+		printf("OpenR twice check: PASS\n");
 	}else{
 		printf("OpenR twice check: FAIL\n");
 	}
-	//getline should block
-	GetLine(outputString);
-	printf("UserTaskOne output string: %s\n", outputString);
 	//close
 	if(Close()){
 		printf("Close: PASS\n");
@@ -194,9 +191,9 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 	}
 	//close false
 	if(!Close()){
-		printf("Close: PASS\n");
+		printf("Close twice: PASS\n");
 	}else{
-		printf("Close: FAIL\n");
+		printf("Close twice: FAIL\n");
 	}
 #ifdef PEX_USE_RTOS
   while (1) {
@@ -204,6 +201,10 @@ void UserTaskOne_task(os_task_param_t task_init_data)
     /* Write your code here ... */
 
 	  OSA_TimeDelay(10);
+
+	  //getline should block
+//	  	GetLine(outputString);
+//	  	printf("UserTaskOne output string: %s\n", outputString);
 #ifdef PEX_USE_RTOS   
   }
 #endif
@@ -223,11 +224,13 @@ void UserTaskTwo_task(os_task_param_t task_init_data)
 	  //putline
 	  char inputString[HANDLER_BUFFER_SIZE];
 	  if(!PutLine(0, inputString)){
-		  printf("PutLine early check: PASS");
+		  printf("PutLine early check: PASS\n");
 	  }else{
-		  printf("PutLine early check: FAIL");
+		  printf("PutLine early check: FAIL\n");
 	  }
 	  //openw
+	  _queue_id qID = OpenW();
+	  //if(qID != )
 	  //openw false
 	  //putline should block
 	  //close
@@ -236,7 +239,7 @@ void UserTaskTwo_task(os_task_param_t task_init_data)
   while (1) {
 #endif
     /* Write your code here ... */
-
+	  OSA_TimeDelay(10);
 
 #ifdef PEX_USE_RTOS   
   }
