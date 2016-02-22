@@ -408,13 +408,28 @@ bool PutLine(_queue_id queueId, char* inputString){
 		return false;
 	}
 
+	// Get current writer
+	if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
+		printf("Mutex lock failed.\n");
+		_task_block();
+	}
+
+	_task_id currentWriter = g_Handler->currentWriter;
+
+	_mutex_unlock(&g_HandlerMutex);
+
+	// Check that current task has write access
+	if(currentWriter != _task_get_id()){
+		return false;
+	}
+
 	// Initialize serial message
 	SerialMessagePtr writeMessage = _initializeSerialMessage(inputString, queueId);
 
 	// Write serial message to queue
 	if (!_msgq_send(writeMessage)) {
-	 printf("Could not send a message.\n");
-	 _task_block();
+		printf("Could not send a message.\n");
+		_task_block();
 	}
 
 	return true;

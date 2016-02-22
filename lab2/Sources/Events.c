@@ -55,8 +55,6 @@ extern "C" {
 
 void myUART_RxCallback(uint32_t instance, void * uartState)
 {
-	//UART_DRV_SendData(myUART_IDX, myRxBuff, sizeof(myRxBuff));
-
 	// Allocate an interrupt message
 	InterruptMessagePtr interruptMessage = (InterruptMessagePtr)_msg_alloc(g_InterruptMessagePool);
 	if (interruptMessage == NULL) {
