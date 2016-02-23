@@ -386,6 +386,7 @@ bool GetLine(char* outputString){
 	strncpy(outputString, message->content, message->length);
 
 	// Dispose of message
+	free(message->content);
 	_msg_free(message);
 
 	return true;

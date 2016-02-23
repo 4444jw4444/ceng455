@@ -136,76 +136,72 @@ void serial_task(os_task_param_t task_init_data)
 #endif
 }
 
-/* END os_tasks */
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
-
 /*=============================================================
                         USER TASK 1
  ==============================================================*/
 
 void UserTaskOne_task(os_task_param_t task_init_data)
 {
-  /* Write your local variable definition here */
-  printf("UserTaskOne started!\n");
-  OSA_TimeDelay(1000);
-  	//tests
-	//open r getline, receive lines
-	//already openr return false
-	//openw print out to console
-	//already openw return false
-	//if getline called before openr return false
-	//if putline called before openw return false
-	//close wipes read and write
-	//close return false if no priv
-	//check: readers read, writers write
+  printf("User Task 1 started!\n");
 
-	//T1
-	//getline false
+  // Sleep for some time to allow for handler initialization
+  OSA_TimeDelay(20);
 
-	char outputString[HANDLER_BUFFER_SIZE];
-	if(!GetLine(outputString)){
-		printf("Getline early check: PASS\n");
-	}else{
-		printf("Getline early check: FAIL");
+  	// Create a buffer for received messages
+	char outputString[HANDLER_BUFFER_SIZE + 1];
+	memset(outputString, 0, HANDLER_BUFFER_SIZE + 1);
+
+	// Create a queue to receive messages
+	_queue_id receiveQueue = _initializeQueue(10);
+
+	// Test that a call to GetLine() before a call to OpenR() returns false
+	if(GetLine(outputString) == false){
+		printf("TEST - GetLine() fails if task has not called OpenR(): PASS\n");
+	} else{
+		printf("TEST - GetLine() fails if task has not called OpenR(): FAIL");
 	}
-	//openr
-	if(OpenR(_initializeQueue(10))){
-		printf("OpenR privileges check: PASS\n");
-	}else{
-		printf("OpenR privileges check: FAIL\n");
+	
+	// Test that a valid call to OpenR() returns true
+	if(OpenR(receiveQueue)){
+		printf("TEST - OpenR() returns true: PASS\n");
+	} else{
+		printf("TEST - OpenR() returns true: FAIL\n");
 	}
-	//openr false
-	if(!OpenR(_initializeQueue(11))){
-		printf("OpenR twice check: PASS\n");
-	}else{
-		printf("OpenR twice check: FAIL\n");
+	
+	// Test that OpenR() returns false if a task already has read privileges
+	if(OpenR(outputQueue) == false){
+		printf("TEST - OpenR() returns false if task already has read access: PASS\n");
+	} else{
+		printf("TEST - OpenR() returns false if task already has read access: FAIL\n");
 	}
-	//close
+	
+	// Test that Close() returns true if a task has read access
 	if(Close()){
-		printf("Close: PASS\n");
-	}else{
-		printf("Close: FAIL\n");
+		printf("TEST - Close() returns true if task has read access: PASS\n");
+	} else{
+		printf("TEST - Close() returns true if task has read access: FAIL\n");
 	}
-	//close false
-	if(!Close()){
-		printf("Close twice: PASS\n");
-	}else{
-		printf("Close twice: FAIL\n");
+	
+	// Test that Close() returns false if a task does not have read access
+	if(Close() == false){
+		printf("TEST - Close() returns false if task does not have read access: PASS\n");
+	} else{
+		printf("TEST - Close() returns false if task does not have read access: FAIL\n");
 	}
-	OpenR(_initializeQueue(12));
-	  //getline should block
-	  	GetLine(outputString);
-	  	printf("UserTaskOne output string: %s\n", &outputString);
+
+	// Re-register task to receive future messages
+	if(!OpenR(receiveQueue)){
+		printf("Failed to aquire handler read access.\n");
+		_task_block();
+	}
+
 #ifdef PEX_USE_RTOS
   while (1) {
 #endif
-    /* Write your code here ... */
-
-	  OSA_TimeDelay(10);
-
+	
+	GetLine(outputString);
+  	printf("User Task 1 received string: %s\n", &outputString);
+  	memset(outputString, 0, HANDLER_BUFFER_SIZE + 1);
 
 #ifdef PEX_USE_RTOS   
   }
@@ -218,49 +214,57 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 
 void UserTaskTwo_task(os_task_param_t task_init_data)
 {
-  /* Write your local variable definition here */
-	 printf("UserTaskTwo started!\n");
-	 OSA_TimeDelay(3000);
-	  //T2
-	  //delay(5sec)
-	  //putline
-	  char inputString[HANDLER_BUFFER_SIZE];
-	  if(!PutLine(0, inputString)){
-		  printf("PutLine early check: PASS\n");
-	  }else{
-		  printf("PutLine early check: FAIL\n");
-	  }
-	  //openw
-	  _queue_id qID = OpenW();
-	  if(qID != 0){
-		  printf("OpenW check: PASS\n");
-	  }else{
-		  printf("OpenW check: FAIL\n");
-	  }
-	  //openw false
-	  if(!OpenW() != 0){
-		  printf("OpenW check: PASS\n");
-	  }else{
-		  printf("OpenW check: FAIL\n");
-	  }
-	  //putline should block
-	  if(PutLine(qID, inputString)){
-		  printf("PutLine check: PASS\n");
-	  }else{
-		  printf("PutLine check: FAIL\n");
-	  }
-#ifdef PEX_USE_RTOS
-  while (1) {
-#endif
-    /* Write your code here ... */
-	  OSA_TimeDelay(10);
+	printf("User Task 2 started.\n");
+	 
+	// Delay so that user tasks can run tests
+	OSA_TimeDelay(3000);
 
-#ifdef PEX_USE_RTOS   
-  }
-#endif    
+	// Test that a call to PutLine() before a call to OpenW() returns false
+	if(PutLine(0, "Hello World!") == false){
+		printf("TEST - PutLine() fails if task has not called OpenW(): PASS\n");
+	} else{
+	 	printf("TEST - PutLine() fails if task has not called OpenW(): FAIL\n");
+	}
+	
+	// Test that a valid call to OpenW() returns a valid queue ID
+	_queue_id inputQueue = OpenW();
+	if(inputQueue != 0){
+		printf("TEST - OpenW() returns a non-zero queue ID: PASS\n");
+	} else{
+		printf("TEST - OpenW() returns a non-zero queue ID: FAIL\n");
+	}
+	
+	// Test that OpenW() returns false if task already has write privileges
+	if(OpenW() == 0){
+		printf("TEST - OpenW() returns false if task already has write access: PASS\n");
+	} else{
+		printf("TEST - OpenW() returns false if task already has write access: FAIL\n");
+	}
+
+	// Test that PutLine() returns true
+	if(PutLine(inputQueue, "Hello World!")){
+		printf("TEST - PutLine() returns true when task has write access: PASS\n");
+	} else{
+		printf("TEST - PutLine() returns true when task has write access: FAIL\n");
+	}
+
+	// Test that Close() returns true if a task has write access
+	if(Close()){
+		printf("TEST - Close() returns true if task has write access: PASS\n");
+	} else{
+		printf("TEST - Close() returns true if task has write access: FAIL\n");
+	}
+
+	// Test that Close() returns false if a task does not have write access 
+	if(!Close()){
+		printf("TEST - Close() returns false if task does not have write access: PASS\n");
+	} else{
+		printf("TEST - Close() returns false if task does not have write access: FAIL\n");
+	}
+
+	printf("User Task 2 complete.\n");
+	_task_block();  
 }
-
-/* END os_tasks */
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -268,12 +272,4 @@ void UserTaskTwo_task(os_task_param_t task_init_data)
 
 /*!
 ** @}
-*/
-/*
-** ###################################################################
-**
-**     This file was created by Processor Expert 10.5 [05.21]
-**     for the Freescale Kinetis series of microcontrollers.
-**
-** ###################################################################
 */
