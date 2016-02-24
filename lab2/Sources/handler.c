@@ -413,13 +413,6 @@ _queue_id OpenW(void){
 }
 
 bool PutLine(_queue_id queueId, char* inputString){
-
-	// Ensure last char is a newline
-	int stringLen = strlen(inputString);
-	if (inputString[stringLen - 1] != '\n'){
-		return false;
-	}
-
 	// Get current writer
 	if(_mutex_lock(&g_HandlerMutex) != MQX_OK){
 		printf("Mutex lock failed.\n");

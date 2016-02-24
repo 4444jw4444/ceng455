@@ -169,7 +169,7 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 	}
 	
 	// Test that OpenR() returns false if a task already has read privileges
-	if(OpenR(outputQueue) == false){
+	if(OpenR(receiveQueue) == false){
 		printf("TEST - OpenR() returns false if task already has read access: PASS\n");
 	} else{
 		printf("TEST - OpenR() returns false if task already has read access: FAIL\n");
@@ -200,7 +200,7 @@ void UserTaskOne_task(os_task_param_t task_init_data)
 #endif
 	
 	GetLine(outputString);
-  	printf("User Task 1 received string: %s\n", &outputString);
+  	printf("User Task 1 received string: %s\n", outputString);
   	memset(outputString, 0, HANDLER_BUFFER_SIZE + 1);
 
 #ifdef PEX_USE_RTOS   
@@ -242,7 +242,7 @@ void UserTaskTwo_task(os_task_param_t task_init_data)
 	}
 
 	// Test that PutLine() returns true
-	if(PutLine(inputQueue, "Hello World!")){
+	if(PutLine(inputQueue, "Hello World!\n")){
 		printf("TEST - PutLine() returns true when task has write access: PASS\n");
 	} else{
 		printf("TEST - PutLine() returns true when task has write access: FAIL\n");
